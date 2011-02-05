@@ -29,7 +29,7 @@ use DBI;
 use Asterisk::AGI;
 use Digest::MD5 qw(md5_hex); 
 
-our $VERSION = 'SVN_Version';
+our $VERSION = '2.2.9.083';
 
 my %vars;
 
