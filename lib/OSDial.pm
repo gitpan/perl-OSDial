@@ -136,7 +136,7 @@ sub new {
    DB                               => '0'
    
    PATHconf                         => '/etc/osdial.conf'
-   PATHdocs                         => '/usr/share/doc/osdial-SVN_Version'
+   PATHdocs                         => '/usr/share/doc/osdial-2.2.9.083'
    PATHhome                         => '/opt/osdial/bin'
    PATHlogs                         => '/var/log/osdial'
    PATHagi                          => '/var/lib/asterisk/agi-bin'
@@ -196,7 +196,7 @@ sub _set_defaults {
         	'DB'                   => 0,
 
         	'PATHconf'             => '/etc/osdial.conf',
-		'PATHdocs'             => '/usr/share/doc/osdial-SVN_Version',
+		'PATHdocs'             => '/usr/share/doc/osdial-2.2.9.083',
 		'PATHhome'             => '/opt/osdial/bin',
 		'PATHlogs'             => '/var/log/osdial',
 		'PATHagi'              => '/var/lib/asterisk/agi-bin',
@@ -371,11 +371,29 @@ sub agi_output {
 }
 
 sub agi_tts_sayphrase {
-	my ($self,$phrase,$voice) = @_;
+	my ($self,$phrase,$voice,$data) = @_;
 	if (defined $self->{_agi}) {
-		my $ttsfile = $self->tts_generate($phrase,$voice);
-		$self->AGI->stream_file($ttsfile) if ($ttsfile);
+		foreach my $seg ($self->tts_osdial_parse($phrase,$data)){
+			my $ttsfile = $self->tts_generate($seg,$voice);
+			$self->AGI->stream_file($ttsfile) if ($ttsfile);
+		}
 	}
+}
+
+sub tts_osdial_parse {
+	my ($self,$phrase,$data) = @_;
+	$phrase =~ s/(\[\[.*\]\])/|||$1|||/g;
+	my @splits = split('\|\|\|', $phrase);
+	my $c=0;
+	foreach my $var (@splits) {
+		if ($var =~ /\[\[.*\]\]/) {
+			my $fld = $var;
+			$fld =~ s/\[\[|\]\]//g;
+			$splits[$c] = $data->{$fld};
+		}
+		$c++;
+	}
+	return @splits;
 }
 
 sub tts_generate {
